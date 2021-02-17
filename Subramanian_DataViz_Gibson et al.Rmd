@@ -1,0 +1,135 @@
+---
+title: "Subramanian_DataViz_Gibson et al."
+output: pdf_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#data and some chunks of code from Gibson et al. 2020- Adaptation to Novel Hosts
+
+##load data
+```{r}
+setwd("/Users/swapnasubramanian/Documents/Hell Part 3/Spring 2021/Data Visualization/doi_10")
+getwd()
+d<-read.csv("data_Gibsonetal_focal_host_data.csv")
+```
+
+##load packages
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+
+##data modification and filtering
+```{r}
+# data for killing of N2 hosts- from Gibson code
+dN <-subset(d,d$Treatment!="worm counts"& d$Host=="N2")
+summary(dN)
+dN<- within(dN, Treatment <- relevel(Treatment, ref = "ancestor"))
+
+dN$Treatment=factor(dN$Treatment,levels=c("0-0","0-100", "50-50", "100-0"))
+
+#my filtering
+dat<- d %>% filter(Treatment == "0-0" | Treatment == "0-100" | Treatment == "100-0" | Treatment == "50-50")
+
+dN.A<- d %>% filter(Host == "N2")
+
+dA<- dN.A %>% filter(Treatment == "ancestor")
+
+dN.noA <-dN %>% filter(Treatment == "0-100" | Treatment == "100-0" | Treatment == "50-50" | Treatment == "0-0")
+
+#rename and order
+dat$Treatment <- factor(dat$Treatment, levels = c('0-0', '0-100', '50-50', '100-0'), ordered = TRUE)
+```
+
+##Gibson N2 plot in paper... removed outliers??
+```{r}
+ggplot(dN, aes(x=Treatment, y=Mortality)) +   
+  geom_boxplot(outlier.colour="white",outlier.size=0,fill=c("white","#d9d9d9","#d9d9d9","#737373"),outlier.shape=8,lwd=1.2,color="gray10")+
+  geom_jitter(shape=16,position=position_jitter(0.2),size=3,colour="gray10")+
+  labs(x="")+
+  labs(y="")+
+  scale_x_discrete(labels=c("ancestor" = "Ancestor", "0-0" = "Control", "100-0"="100% N2","50-50"="50%","0-100"="100% CF3"))+
+  scale_y_continuous(limits=c(0.4,1),breaks=c(0.4,0.5,0.6,0.7,0.8,0.9,1))+
+  theme_base()+
+  theme(axis.text.x = element_text(size=24))+
+  theme(axis.text.y = element_text(size=24))+
+  geom_vline(xintercept=1.5, linetype="dashed",color="gray30",size=1)+
+  geom_vline(xintercept=3.5, linetype="dashed",color="gray30",size=1)
+
+#let me remove the outlier code...
+ggplot(dN, aes(x=Treatment, y=Mortality)) +   
+  geom_boxplot(fill=c("white","#d9d9d9","#d9d9d9","#737373"),lwd=1.2,color="gray10")+
+  geom_jitter(shape=16,position=position_jitter(0.2),size=3,colour="gray10")+
+  labs(x="")+
+  labs(y="")+
+  scale_x_discrete(labels=c("ancestor" = "Ancestor", "0-0" = "Control", "100-0"="100% N2","50-50"="50%","0-100"="100% CF3"))+
+  scale_y_continuous(limits=c(0.4,1),breaks=c(0.4,0.5,0.6,0.7,0.8,0.9,1))+
+  theme_base()+
+  theme(axis.text.x = element_text(size=24))+
+  theme(axis.text.y = element_text(size=24))+
+  geom_vline(xintercept=1.5, linetype="dashed",color="gray30",size=1)+
+  geom_vline(xintercept=3.5, linetype="dashed",color="gray30",size=1)
+```
+
+##violin plot
+```{r}
+ggplot(dN, aes(x=Treatment, y=Mortality)) +   
+  geom_violin(aes(fill=Treatment, color = "transparent"))+
+  geom_boxplot(width=0.1, aes(fill=Treatment))+
+  #geom_jitter(shape=16,position=position_jitter(0.2),size=3,colour="gray10")+
+  labs(x="Parasite selection treatment")+
+  labs(y="Host genotype 2 mortality")+
+  scale_x_discrete(labels=c("ancestor" = "Ancestor", "0-0" = "Control", "100-0"="Genotype 2","50-50"="Mixed","0-100"="Genotype 1"))+
+  theme_minimal()+
+  scale_color_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f")) +
+  scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f")) +
+   theme(legend.position = "none")
+
+```
+
+##density plot
+```{r}
+ggplot(dN.noC, aes(x=Mortality, fill=Treatment)) +   
+  geom_density(alpha=0.9, color = "transparent")+
+  geom_density(data = select(dC, -Treatment), aes(fill = "0-0", color = "0-0"), alpha = 0.3, color = "transparent") + 
+  facet_grid(Treatment ~ .)+
+  labs(y="scaled density")+
+  labs(x="Host genotype 2 mortality")+
+  theme_minimal()+
+  scale_color_manual(values = c("#808080", "#fef0d9","#fdcc8a", "#fc8d59", "#d7301f")) +
+  scale_fill_manual(values = c("#808080","#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f")) +
+   theme(legend.position = "none")
+
+ggplot(dN.noA, aes(x=Mortality, fill=Treatment)) +   
+  geom_density(alpha=0.9, color = "transparent")+
+  geom_density(data = select(dA, -Treatment), aes(fill = "ancestor"), alpha = 0.3, color = "transparent") + 
+  facet_grid(Treatment ~ .)+
+  labs(y="scaled density")+
+  labs(x="Host genotype 2 mortality")+
+  theme_minimal()+
+  scale_color_manual(values = c("#fef0d9","#fdcc8a", "#fc8d59", "#d7301f", "#808080")) +
+  scale_fill_manual(values = c("#fef0d9","#fdcc8a", "#fc8d59", "#d7301f", "#808080")) +
+   theme(legend.position = "none")
+```
+
+##all of the data together just a little bit of fun
+```{r}
+ggplot(dat, aes(x=Treatment, y=Mortality)) +   
+  geom_violin(aes(fill=Treatment))+
+  geom_boxplot(width=0.1, aes(fill=Treatment))+
+  facet_grid(. ~ Host) +
+  #geom_jitter(shape=16,position=position_jitter(0.2),size=3,colour="gray10")+
+  labs(x="Parasite selection treatment")+
+  labs(y="Host mortality")+
+  scale_x_discrete(labels=c("ancestor" = "Ancestor", "0-0" = "Control", "100-0"="Genotype 2","50-50"="Mixed","0-100"="Genotype 1"))+
+  theme_minimal()+
+  scale_color_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f")) +
+  scale_fill_manual(values = c("#fef0d9", "#fdcc8a", "#fc8d59", "#d7301f")) +
+   theme(legend.position = "none")
+```
+
