@@ -1,0 +1,58 @@
+---
+title: "Subramanian_Shiny_DWPerf"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#load packages
+```{r}
+library(shiny)
+library(ggpubr)
+```
+
+#ui
+```{r}
+ui=fluidPage(
+  checkboxGroupInput("numaph", 
+                     label = "Choose number of Aphids",
+                      choices = c("0 aphids","5 aphids","10 aphids", "30 aphids")
+),
+
+plotOutput("plot")
+)
+```
+
+#server
+```{r}
+server=function(input,output){
+  #data manipulation
+  data_1=reactive({
+    return(dw[dw$aph.t0%in%input$numaph,])
+  })
+  #plot
+  output$plot <- renderPlot({
+    ggscatter(data = data_1(),
+          x = "date.adjust",
+           y = "value",
+           xlab = "Date",
+           ylab = "Duckweed Abundance",
+           color = "aph.t0",
+           shape = "aph.t0", 
+          size = 1.75,
+           facet.by = "spp.dw",
+          add = c("loess")) 
+  })
+}
+
+```
+
+#run shiny
+```{r}
+shinyApp(ui,server)
+```
+
