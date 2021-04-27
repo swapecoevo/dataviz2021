@@ -1,0 +1,89 @@
+---
+title: "Subramanian_DWHerb_Shiny"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#load packages
+```{r}
+library(ggplot2)
+library(dplyr)
+library(shiny)
+library(ggpubr)
+```
+
+#ui for all
+```{r}
+ui <- fluidPage(
+  titlePanel("Duckweed Surface Area"),
+           checkboxGroupInput("herbiv", 
+                              label = "Herbivory Treatment",
+                              choices = c("IN", "EX", "APH", "WEE")),
+  mainPanel(plotOutput("plot"))
+  )
+
+```
+
+#servers
+```{r}
+#server for error bars
+server_error <- function(input, output) {
+  #data manipulation
+  data_1=reactive({
+    return(finalherbdat[finalherbdat$herb%in%input$herbiv,])
+  })
+  #plot
+  output$plot <- renderPlot({ 
+    ggerrorplot(data = data_1(),
+          x = "herb",
+           y = "area",
+          desc_stat = "mean_se",
+          merge = TRUE,
+           xlab = "Herbivore Treatment",
+           ylab = "Duckweed Final Surface Area",
+           color = "spp.dw",
+          fill = "spp.dw",
+           facet.by = "site",
+          palette = "Set1")
+  })
+  
+}
+
+#server for bar plot
+server_bar<- function(input, output) {
+  #data manipulation
+  data_1=reactive({
+    return(finalherbdat[finalherbdat$herb%in%input$herbiv,])
+  })
+  #plot
+  output$plot <- renderPlot({ 
+   ggplot(data=data_1(), 
+       aes(x =herb,
+           y = area,
+           fill = spp.dw))  +
+  labs(y = "Proportion of Duckweed Surface Area",
+       x= "Herbivory Treatment",
+       fill = "spp.dw") +
+  geom_col(position = "fill") +
+  facet_grid(.~ site) +
+  geom_hline(yintercept=0.5, linetype="dashed", color = "black")+
+  theme_classic()
+  })
+  
+}
+
+```
+
+#run apps
+```{r}
+#run app for error bars
+shinyApp(ui = ui, server = server_error)
+
+#run app for proportional bar plot
+shinyApp(ui = ui, server = server_bar)
+```
